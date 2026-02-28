@@ -52,41 +52,54 @@
             🔒 This is a <strong>demo payment form</strong>. No real charges will be made.
         </p>
 
-        <form action="{{ route('events.payment.process', $event) }}" method="POST" class="form-grid" id="payment-form">
+        <form action="{{ route('events.payment.process', $event) }}" method="POST" class="form-grid" id="payment-form" novalidate>
             @csrf
 
             <div class="form-field">
-                <label class="form-label">Cardholder Name</label>
-                <input type="text" name="card_name" value="{{ old('card_name', $pending['name']) }}"
-                       class="form-input" placeholder="John Doe" required autocomplete="cc-name">
+                <label class="form-label">Cardholder Name <span style="color:var(--danger);">*</span></label>
+                <input type="text" name="card_name" id="card-name-input" value="{{ old('card_name', $pending['name']) }}"
+                       class="form-input" placeholder="John Doe"
+                       required minlength="2" maxlength="255" autocomplete="cc-name">
+                <span class="form-error" id="card-name-error" style="display:none;"></span>
                 @error('card_name') <p class="form-error">{{ $message }}</p> @enderror
             </div>
 
             <div class="form-field">
-                <label class="form-label">Card Number</label>
+                <label class="form-label">Card Number <span style="color:var(--danger);">*</span></label>
                 <div style="position:relative;">
                     <input type="text" name="card_number" value="{{ old('card_number') }}"
                            class="form-input" placeholder="1234 5678 9012 3456"
                            maxlength="19" id="card-number-input" required autocomplete="cc-number"
-                           style="padding-right:3rem;">
-                    <span style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);font-size:1.4rem;" id="card-brand-icon">💳</span>
+                           inputmode="numeric" style="padding-right:6rem;">
+                    {{-- Brand badge --}}
+                    <span id="card-brand-badge" style="
+                        position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);
+                        font-size:0.7rem;font-weight:700;letter-spacing:0.05em;
+                        padding:2px 6px;border-radius:4px;
+                        background:#e5e7eb;color:#6b7280;
+                        white-space:nowrap;pointer-events:none;
+                    ">????</span>
                 </div>
+                <span class="form-error" id="card-number-error" style="display:none;"></span>
                 @error('card_number') <p class="form-error">{{ $message }}</p> @enderror
             </div>
 
             <div class="form-row">
                 <div class="form-field">
-                    <label class="form-label">Expiry Date</label>
+                    <label class="form-label">Expiry Date <span style="color:var(--danger);">*</span></label>
                     <input type="text" name="card_expiry" value="{{ old('card_expiry') }}"
                            class="form-input" placeholder="MM/YY" maxlength="5"
-                           id="card-expiry-input" required autocomplete="cc-exp">
+                           id="card-expiry-input" required pattern="^(0[1-9]|1[0-2])\/\d{2}$"
+                           inputmode="numeric" autocomplete="cc-exp">
+                    <span class="form-error" id="card-expiry-error" style="display:none;"></span>
                     @error('card_expiry') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-field">
-                    <label class="form-label">CVV</label>
-                    <input type="text" name="card_cvv" value="{{ old('card_cvv') }}"
+                    <label class="form-label">CVV <span style="color:var(--danger);">*</span></label>
+                    <input type="text" name="card_cvv" id="card-cvv-input" value="{{ old('card_cvv') }}"
                            class="form-input" placeholder="123" maxlength="4"
-                           required autocomplete="cc-csc">
+                           required pattern="^\d{3,4}$" inputmode="numeric" autocomplete="cc-csc">
+                    <span class="form-error" id="card-cvv-error" style="display:none;"></span>
                     @error('card_cvv') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -102,31 +115,164 @@
 </div>
 
 <script>
-    // Card number formatting (spaces every 4 digits) + brand icon
-    const cardInput = document.getElementById('card-number-input');
-    const brandIcon = document.getElementById('card-brand-icon');
-    if (cardInput) {
-        cardInput.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '').substring(0, 16);
-            this.value = v.replace(/(.{4})/g, '$1 ').trim();
-            // Strip spaces before form submit
-            const first = v[0];
-            brandIcon.textContent = first === '4' ? '💳' : first === '5' ? '💳' : first === '3' ? '💳' : '💳';
-        });
-        // Remove spaces on submit so only digits are sent
-        cardInput.closest('form').addEventListener('submit', function () {
-            cardInput.value = cardInput.value.replace(/\s/g, '');
-        });
+(function () {
+    /* ── Card brand detection ───────────────────────────────────── */
+    const BRANDS = [
+        { name: 'VISA',       bg: '#1a1f71', color: '#fff', pattern: /^4/ },
+        { name: 'MASTERCARD', bg: '#eb001b', color: '#fff', pattern: /^5[1-5]|^2(2[2-9]|[3-6]\d|7[01])/ },
+        { name: 'AMEX',       bg: '#2e77bc', color: '#fff', pattern: /^3[47]/ },
+        { name: 'DISCOVER',   bg: '#e65c00', color: '#fff', pattern: /^6(?:011|22(?:1(?:2[6-9]|[3-9])|[2-8])|4[4-9]|5)/ },
+        { name: 'JCB',        bg: '#003087', color: '#fff', pattern: /^35/ },
+        { name: 'UNIONPAY',   bg: '#c0392b', color: '#fff', pattern: /^62/ },
+    ];
+
+    function detectBrand(digits) {
+        return BRANDS.find(b => b.pattern.test(digits)) || null;
     }
 
-    // Expiry auto-slash
+    const badge    = document.getElementById('card-brand-badge');
+    const cardInput = document.getElementById('card-number-input');
+
+    function updateBadge(digits) {
+        const brand = detectBrand(digits);
+        if (!digits) {
+            badge.textContent = '????';
+            badge.style.background = '#e5e7eb';
+            badge.style.color = '#6b7280';
+        } else if (brand) {
+            badge.textContent = brand.name;
+            badge.style.background = brand.bg;
+            badge.style.color = brand.color;
+        } else {
+            badge.textContent = 'UNKNOWN';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#92400e';
+        }
+    }
+
+    /* ── Error helpers ─────────────────────────────────────────── */
+    function showError(inputId, errorId, msg) {
+        const el = document.getElementById(errorId);
+        const inp = document.getElementById(inputId);
+        if (el) { el.textContent = msg; el.style.display = 'block'; }
+        if (inp) inp.style.outline = '2px solid var(--danger, #ef4444)';
+    }
+    function clearError(inputId, errorId) {
+        const el = document.getElementById(errorId);
+        const inp = document.getElementById(inputId);
+        if (el) { el.textContent = ''; el.style.display = 'none'; }
+        if (inp) inp.style.outline = '';
+    }
+
+    /* ── Card number: format + brand ───────────────────────────── */
+    if (cardInput) {
+        cardInput.addEventListener('input', function () {
+            const digits = this.value.replace(/\D/g, '').substring(0, 16);
+            this.value = digits.replace(/(.{4})/g, '$1 ').trim();
+            updateBadge(digits);
+            if (digits && (digits.length < 13 || digits.length > 16)) {
+                showError('card-number-input', 'card-number-error', 'Card number must be 13–16 digits.');
+            } else {
+                clearError('card-number-input', 'card-number-error');
+            }
+        });
+        updateBadge(''); // initialise on page load
+    }
+
+    /* ── Expiry: auto-slash + validation ───────────────────────── */
     const expiryInput = document.getElementById('card-expiry-input');
     if (expiryInput) {
         expiryInput.addEventListener('input', function () {
             let v = this.value.replace(/\D/g, '').substring(0, 4);
             if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
             this.value = v;
+            if (v.length === 5) {
+                const [mm, yy] = v.split('/').map(Number);
+                const now = new Date();
+                const expYear = 2000 + yy;
+                const expMonth = mm;
+                const valid = mm >= 1 && mm <= 12 &&
+                    (expYear > now.getFullYear() ||
+                     (expYear === now.getFullYear() && expMonth >= now.getMonth() + 1));
+                valid
+                    ? clearError('card-expiry-input', 'card-expiry-error')
+                    : showError('card-expiry-input', 'card-expiry-error', 'Card has expired or date is invalid.');
+            } else {
+                clearError('card-expiry-input', 'card-expiry-error');
+            }
         });
     }
+
+    /* ── CVV: digits only ──────────────────────────────────────── */
+    const cvvInput = document.getElementById('card-cvv-input');
+    if (cvvInput) {
+        cvvInput.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').substring(0, 4);
+            if (this.value && (this.value.length < 3)) {
+                showError('card-cvv-input', 'card-cvv-error', 'CVV must be 3 or 4 digits.');
+            } else {
+                clearError('card-cvv-input', 'card-cvv-error');
+            }
+        });
+    }
+
+    /* ── Cardholder name ───────────────────────────────────────── */
+    const nameInput = document.getElementById('card-name-input');
+    if (nameInput) {
+        nameInput.addEventListener('input', function () {
+            this.value.trim().length < 2
+                ? showError('card-name-input', 'card-name-error', 'Cardholder name is required.')
+                : clearError('card-name-input', 'card-name-error');
+        });
+    }
+
+    /* ── Form submit validation ────────────────────────────────── */
+    const form = document.getElementById('payment-form');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            let valid = true;
+
+            const nameVal = nameInput?.value.trim() ?? '';
+            if (nameVal.length < 2) {
+                showError('card-name-input', 'card-name-error', 'Cardholder name is required.');
+                valid = false;
+            }
+
+            const digits = (cardInput?.value ?? '').replace(/\s/g, '');
+            if (digits.length < 13 || digits.length > 16) {
+                showError('card-number-input', 'card-number-error', 'Enter a valid 13–16 digit card number.');
+                valid = false;
+            }
+            if (!detectBrand(digits)) {
+                // warn but don't block (demo form)
+            }
+
+            const expVal = expiryInput?.value ?? '';
+            if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expVal)) {
+                showError('card-expiry-input', 'card-expiry-error', 'Enter a valid expiry date (MM/YY).');
+                valid = false;
+            } else {
+                const [mm, yy] = expVal.split('/').map(Number);
+                const now = new Date();
+                const expYear = 2000 + yy;
+                if (expYear < now.getFullYear() || (expYear === now.getFullYear() && mm < now.getMonth() + 1)) {
+                    showError('card-expiry-input', 'card-expiry-error', 'Card has expired.');
+                    valid = false;
+                }
+            }
+
+            const cvvVal = cvvInput?.value ?? '';
+            if (!/^\d{3,4}$/.test(cvvVal)) {
+                showError('card-cvv-input', 'card-cvv-error', 'CVV must be 3 or 4 digits.');
+                valid = false;
+            }
+
+            if (!valid) { e.preventDefault(); return; }
+
+            // Strip spaces from card number before submitting
+            if (cardInput) cardInput.value = digits;
+        });
+    }
+})();
 </script>
 @endsection

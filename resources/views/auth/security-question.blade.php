@@ -11,8 +11,8 @@
                 <label for="security_question" class="auth-label">Security Question</label>
                 <select id="security_question" name="security_question" class="auth-input" required>
                     <option value="">— Select a question —</option>
-                    @foreach($questions as $q)
-                        <option value="{{ $q }}" {{ old('security_question', $user->security_question ?? '') === $q ? 'selected' : '' }}>{{ $q }}</option>
+                    @foreach($questions as $id => $text)
+                        <option value="{{ $id }}" {{ (string)old('security_question', $user->security_question ?? '') === (string)$id ? 'selected' : '' }}>{{ $text }}</option>
                     @endforeach
                 </select>
                 @error('security_question')

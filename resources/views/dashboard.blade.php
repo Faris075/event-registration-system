@@ -63,9 +63,18 @@
                                     </td>
                                     <td>{{ \Carbon\Carbon::parse($reg->registration_date)->format('M d, Y') }}</td>
                                     <td>
+                                        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
                                         @if($reg->event)
-                                            <a href="{{ route('events.show', $reg->event) }}" class="btn btn-ghost btn-sm">View Event</a>
+                                            <a href="{{ route('events.show', $reg->event) }}" class="btn btn-ghost btn-sm">View</a>
                                         @endif
+                                        @if($reg->status !== 'cancelled' && $reg->event && \Carbon\Carbon::parse($reg->event->date_time)->isFuture())
+                                            <form method="POST" action="{{ route('events.registration.cancel', [$reg->event_id, $reg->id]) }}" onsubmit="return confirm('Cancel your registration for \'{{ addslashes($reg->event->title) }}\'? This cannot be undone.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">Cancel</button>
+                                            </form>
+                                        @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

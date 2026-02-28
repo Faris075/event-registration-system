@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EventCancelledMail;
 use App\Models\Event;
 use App\Models\Registration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class EventController extends Controller
 {
@@ -103,14 +105,38 @@ class EventController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'date_time' => 'required|date|after:now',
+            'date_time' => 'required|date',
             'location' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1',
             'price' => 'nullable|numeric|min:0',
             'status' => 'required|in:draft,published,cancelled,completed',
         ]);
 
+        $oldStatus = $event->status;
+        $newStatus = $validated['status'];
+
         $event->update($validated);
+
+        // If status just changed to cancelled, notify all active registrants.
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+            $registrations = $event->registrations()
+                ->with('attendee')
+                ->whereIn('status', ['confirmed', 'waitlisted'])
+                ->get();
+
+            foreach ($registrations as $reg) {
+                if ($reg->attendee) {
+                    try {
+                        Mail::to($reg->attendee->email)->send(
+                            new EventCancelledMail($event, $reg->attendee->name, $reg->status)
+                        );
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
+                }
+            }
+        }
+
         return redirect()->route('events.index')->with('success', 'Event updated!');
     }
 

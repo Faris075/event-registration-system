@@ -14,15 +14,32 @@ use Illuminate\View\View;
  */
 class SecurityQuestionController extends Controller
 {
-    /** Predefined list of security questions. */
+    /** Predefined list of security questions keyed by numeric ID. */
     public static array $questions = [
-        "What is your mother's maiden name?",
-        "What was the name of your first pet?",
-        "What city were you born in?",
-        "What was the name of your first school?",
-        "What is your favourite movie?",
-        "What is the name of your oldest sibling?",
+        1 => "What is your mother's maiden name?",
+        2 => "What was the name of your first pet?",
+        3 => "What city were you born in?",
+        4 => "What was the name of your first school?",
+        5 => "What is your favourite movie?",
+        6 => "What is the name of your oldest sibling?",
     ];
+
+    /**
+     * Resolve the question text from an ID stored in the DB.
+     * Accepts both numeric IDs (new format) and legacy full-text (fallback).
+     */
+    public static function questionText(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        // Numeric ID stored (new format)
+        if (isset(self::$questions[(int) $value]) && is_numeric($value)) {
+            return self::$questions[(int) $value];
+        }
+        // Legacy: full text stored — return as-is
+        return $value;
+    }
 
     /**
      * Show the security question setup form for existing users.
@@ -41,7 +58,7 @@ class SecurityQuestionController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'security_question' => ['required', 'string', 'max:255'],
+            'security_question' => ['required', 'integer', 'between:1,6'],
             'security_answer'   => ['required', 'string', 'max:255'],
         ]);
 
@@ -100,7 +117,9 @@ class SecurityQuestionController extends Controller
             return redirect()->route('security-question.recover');
         }
 
-        return view('auth.recover-answer', ['question' => $user->security_question]);
+        return view('auth.recover-answer', [
+            'question' => self::questionText($user->security_question),
+        ]);
     }
 
     /**

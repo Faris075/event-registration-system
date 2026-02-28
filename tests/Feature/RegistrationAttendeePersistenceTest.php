@@ -37,6 +37,7 @@ class RegistrationAttendeePersistenceTest extends TestCase
             'email' => 'lina@example.com',
             'phone' => '+201001112223',
             'company' => 'Skyline Media',
+            'terms_accepted' => '1',
         ])->assertRedirect(route('events.payment.page', $event));
 
         $this->post(route('events.payment.process', $event), $this->paymentData())
@@ -71,6 +72,7 @@ class RegistrationAttendeePersistenceTest extends TestCase
             'email' => 'lina@example.com',
             'phone' => '+201001112223',
             'company' => 'Skyline Media',
+            'terms_accepted' => '1',
         ])->assertRedirect(route('events.payment.page', $event));
 
         $this->post(route('events.payment.process', $event), $this->paymentData())
@@ -114,6 +116,7 @@ class RegistrationAttendeePersistenceTest extends TestCase
             'email' => 'repeat@example.com',
             'phone' => '+201001112223',
             'company' => 'New Co',
+            'terms_accepted' => '1',
         ])->assertRedirect(route('events.payment.page', $event));
 
         $this->post(route('events.payment.process', $event), $this->paymentData())

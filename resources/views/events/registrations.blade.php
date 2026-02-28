@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+.data-table th { padding: 0.75rem 1rem; white-space:nowrap; }
+.data-table td { padding: 0.75rem 1rem; vertical-align: middle; }
+.reg-action-row { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin:0; }
+</style>
 <div class="page-wrap">
     <div class="page-header">
         <div>
@@ -129,19 +134,23 @@
                             <td>{{ $registration->waitlist_position ?? '—' }}</td>
                             <td><span class="{{ $pBadge }}">{{ ucfirst($registration->payment_status) }}</span></td>
                             <td>
-                                <form method="POST" action="{{ route('admin.events.registrations.update', [$event, $registration]) }}" style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin:0;">
+                                <form method="POST" action="{{ route('admin.events.registrations.update', [$event, $registration]) }}" class="reg-action-row">
                                     @csrf
                                     @method('PATCH')
-                                    <select name="status" class="form-select" style="padding:0.25rem 0.5rem;font-size:0.8rem;" aria-label="Update status">
+                                    <select name="status" class="form-select" style="padding:0.3rem 0.6rem;font-size:0.82rem;" aria-label="Update status">
                                         <option value="confirmed" @selected($registration->status === 'confirmed')>Confirmed</option>
                                         <option value="waitlisted" @selected($registration->status === 'waitlisted')>Waitlisted</option>
                                         <option value="cancelled" @selected($registration->status === 'cancelled')>Cancelled</option>
                                     </select>
-                                    <select name="payment_status" class="form-select" style="padding:0.25rem 0.5rem;font-size:0.8rem;" aria-label="Update payment status">
+                                    <select name="payment_status" class="form-select" style="padding:0.3rem 0.6rem;font-size:0.82rem;{{ $registration->payment_status === 'paid' ? 'opacity:0.6;cursor:not-allowed;' : '' }}" aria-label="Update payment status" {{ $registration->payment_status === 'paid' ? 'disabled title="Payment already received — cannot be changed"' : '' }}>
                                         <option value="pending"  @selected($registration->payment_status === 'pending')>Pending</option>
                                         <option value="paid"     @selected($registration->payment_status === 'paid')>Paid</option>
                                         <option value="refunded" @selected($registration->payment_status === 'refunded')>Refunded</option>
                                     </select>
+                                    @if($registration->payment_status === 'paid')
+                                        {{-- hidden field so form still submits the paid value when the select is disabled --}}
+                                        <input type="hidden" name="payment_status" value="paid">
+                                    @endif
                                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
                                 </form>
                             </td>
@@ -150,7 +159,22 @@
                 </tbody>
             </table>
         </div>
-        <div style="margin-top:1rem;">{{ $registrations->links() }}</div>
+        <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+            {{ $registrations->links() }}
+            @if($registrations->lastPage() > 1)
+            <form method="GET" action="{{ route('admin.events.registrations.index', $event) }}" style="display:flex;align-items:center;gap:0.4rem;">
+                @foreach(request()->except('page') as $k => $v)
+                    <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                @endforeach
+                <label for="page-jump" style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">Go to page:</label>
+                <select id="page-jump" name="page" class="form-select" style="padding:0.25rem 0.5rem;font-size:0.82rem;width:auto;" onchange="this.form.submit()">
+                    @for($p = 1; $p <= $registrations->lastPage(); $p++)
+                        <option value="{{ $p }}" {{ $registrations->currentPage() == $p ? 'selected' : '' }}>{{ $p }}</option>
+                    @endfor
+                </select>
+            </form>
+            @endif
+        </div>
     @endif
 
     <div style="margin-top:1.25rem;">

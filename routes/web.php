@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 // ── Public routes ─────────────────────────────────────────────────────────────
 
 Route::view('/', 'home')->name('home');
+Route::view('/terms', 'terms')->name('terms');
 
 // ── Dashboard (authenticated users) ───────────────────────────────────────────
 // Resolves the logged-in user's attendee record by email, then loads their
@@ -54,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::post('events/{event}/register', [EventRegistrationController::class, 'store'])->name('events.register');
     Route::get('events/{event}/payment', [EventRegistrationController::class, 'showPayment'])->name('events.payment.page');
     Route::post('events/{event}/payment', [EventRegistrationController::class, 'processPayment'])->name('events.payment.process');
+    Route::delete('events/{event}/registrations/{registration}/cancel', [EventRegistrationController::class, 'cancelMyRegistration'])->name('events.registration.cancel');
 });
 
 // Confirmation page is guest-accessible (session-driven) so shareable links work.

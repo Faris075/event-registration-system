@@ -70,6 +70,21 @@
         </div>
     @endif
 
-    <div style="margin-top:1.5rem;">{{ $events->links() }}</div>
+    <div style="margin-top:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        {{ $events->links() }}
+        @if($events->lastPage() > 1)
+        <form method="GET" action="{{ route('events.index') }}" style="display:flex;align-items:center;gap:0.4rem;">
+            @foreach(request()->except('page') as $k => $v)
+                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+            @endforeach
+            <label for="events-page-jump" style="font-size:0.82rem;color:var(--muted);white-space:nowrap;">Go to page:</label>
+            <select id="events-page-jump" name="page" class="form-select" style="padding:0.25rem 0.5rem;font-size:0.82rem;width:auto;" onchange="this.form.submit()">
+                @for($p = 1; $p <= $events->lastPage(); $p++)
+                    <option value="{{ $p }}" {{ $events->currentPage() == $p ? 'selected' : '' }}>{{ $p }}</option>
+                @endfor
+            </select>
+        </form>
+        @endif
+    </div>
 </div>
 @endsection

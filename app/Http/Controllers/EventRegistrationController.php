@@ -55,10 +55,13 @@ class EventRegistrationController extends Controller
         }
 
         $validated = $request->validate([
-            'name'    => ['required', 'string', 'max:255'],
-            'email'   => ['required', 'email', 'max:255'],
-            'phone'   => ['nullable', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
-            'company' => ['nullable', 'string', 'max:255'],
+            'name'           => ['required', 'string', 'max:255'],
+            'email'          => ['required', 'email', 'max:255'],
+            'phone'          => ['nullable', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            'company'        => ['nullable', 'string', 'max:255'],
+            'terms_accepted' => ['accepted'],
+        ], [
+            'terms_accepted.accepted' => 'You must accept the Terms & Conditions to register.',
         ]);
 
         // Hold registration details in session until payment is completed.
@@ -431,6 +434,11 @@ class EventRegistrationController extends Controller
             'payment_status' => ['required', 'in:pending,paid,refunded'],
         ]);
 
+        // Prevent changing payment_status once it is 'paid'.
+        if ($registration->payment_status === 'paid') {
+            $validated['payment_status'] = 'paid';
+        }
+
         $promotedAttendeeName = $validated['status'] === 'cancelled'
             ? $this->cancelAndPromote($event, $registration)
             : DB::transaction(function () use ($event, $registration, $validated) {
@@ -484,6 +492,44 @@ class EventRegistrationController extends Controller
         return redirect()
             ->route('admin.events.registrations.index', $event)
             ->with('success', $successMessage);
+    }
+
+    /**
+     * Allow an authenticated user to cancel their own registration.
+     * Paid registrations are automatically marked as refunded.
+     */
+    public function cancelMyRegistration(Event $event, Registration $registration): RedirectResponse
+    {
+        if ($registration->event_id !== $event->id) {
+            abort(404);
+        }
+
+        // Verify the registration belongs to the authenticated user's attendee record.
+        $attendee = Attendee::where('email', Auth::user()->email)->first();
+        if (! $attendee || $registration->attendee_id !== $attendee->id) {
+            abort(403, 'You may only cancel your own registrations.');
+        }
+
+        if ($registration->status === 'cancelled') {
+            return redirect()->route('dashboard')->with('info', 'This registration is already cancelled.');
+        }
+
+        $wasConfirmed = $registration->status === 'confirmed';
+        $wasPaid = $registration->payment_status === 'paid';
+
+        $this->cancelAndPromote($event, $registration);
+
+        // Mark as refunded if the user had paid.
+        if ($wasPaid) {
+            $registration->refresh();
+            $registration->update(['payment_status' => 'refunded']);
+        }
+
+        $message = $wasConfirmed
+            ? 'Registration cancelled.' . ($wasPaid ? ' A refund has been initiated.' : '')
+            : 'You have been removed from the waitlist.';
+
+        return redirect()->route('dashboard')->with('success', $message);
     }
 
     /**

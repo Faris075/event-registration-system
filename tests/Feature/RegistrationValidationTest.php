@@ -101,6 +101,7 @@ class RegistrationValidationTest extends TestCase
             'email' => 'repeat@example.com',
             'phone' => '+1234567890',
             'company' => 'Acme',
+            'terms_accepted' => '1',
         ])->assertRedirect(route('events.payment.page', $event));
 
         $this->post(route('events.payment.process', $event), [
