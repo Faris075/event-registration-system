@@ -76,7 +76,7 @@
                     <span class="badge badge-confirmed" style="padding:0.5rem 1rem;font-size:0.82rem;">✅ You're Registered</span>
                 @elseif($event->status === 'published' && $event->remaining_spot > 0 && !$event->isCompleted())
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-success">Register Now</a>
-                @elseif($event->status === 'published' && $event->remaining_spot <= 0 && !$event->isCompleted())
+                @elseif($event->status === 'published' && $event->remaining_spot <= 0)
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-primary">Join Waitlist</a>
                 @else
                     <span class="badge badge-completed" style="padding:0.5rem 1rem;font-size:0.82rem;">Registration Unavailable</span>

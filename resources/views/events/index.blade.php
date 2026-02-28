@@ -64,7 +64,7 @@
                     <div class="event-card-actions">
                         <a href="{{ route('events.show', $event) }}" class="btn btn-ghost btn-sm">View</a>
 
-                        @if($event->status === 'published' && !$event->date_time->isPast())
+                        @if($event->status === 'published')
                             @if(in_array($event->id, $bookedEventIds->toArray() ?? []))
                                 <span class="badge badge-confirmed" style="padding:0.35rem 0.75rem;">Booked</span>
                             @elseif($event->remaining_spot > 0)
@@ -72,8 +72,6 @@
                             @else
                                 <a href="{{ route('events.register.page', $event) }}" class="btn btn-ghost btn-sm" style="border-color:#f59e0b;color:#92400e;">Join Waitlist</a>
                             @endif
-                        @elseif($event->date_time->isPast())
-                            <span class="badge badge-completed" style="padding:0.3rem 0.65rem;font-size:0.75rem;">Event Ended</span>
                         @endif
 
                         @auth
