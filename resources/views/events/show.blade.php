@@ -72,9 +72,11 @@
             <a href="{{ route('events.index') }}" class="btn btn-ghost btn-sm">← Back</a>
 
             @if(!auth()->check() || !auth()->user()->is_admin)
-                @if($isBooked ?? false)
+                @if($event->date_time->isPast())
+                    <span class="badge badge-completed" style="padding:0.5rem 1rem;font-size:0.82rem;">This event has ended</span>
+                @elseif($isBooked ?? false)
                     <span class="badge badge-confirmed" style="padding:0.5rem 1rem;font-size:0.82rem;">✅ You're Registered</span>
-                @elseif($event->status === 'published' && $event->remaining_spot > 0 && !$event->isCompleted())
+                @elseif($event->status === 'published' && $event->remaining_spot > 0)
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-success">Register Now</a>
                 @elseif($event->status === 'published' && $event->remaining_spot <= 0)
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-primary">Join Waitlist</a>

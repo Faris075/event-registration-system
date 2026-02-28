@@ -38,8 +38,14 @@ class EventRegistrationController extends Controller
     /**
      * Show the dedicated registration form for an event.
      */
-    public function create(Event $event): View
+    public function create(Event $event): View|RedirectResponse
     {
+        if (now()->greaterThanOrEqualTo($event->date_time)) {
+            return redirect()
+                ->route('events.show', $event)
+                ->withErrors(['registration' => 'Registration is closed — this event has already taken place.']);
+        }
+
         return view('events.register', compact('event'));
     }
 
