@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Share currency symbol + list with every view so price displays are consistent.
         View::composer('*', function ($view) {
-            $user           = auth()->user();
+            $user           = Auth::user();
             $currencies     = User::CURRENCIES;
             $currencyCode   = $user?->currency ?? 'USD';
             $currencySymbol = $currencies[$currencyCode]['symbol'] ?? '$';
