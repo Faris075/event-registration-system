@@ -8,11 +8,10 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        {{-- Apply saved theme before first paint to avoid flash --}}
+        {{-- Apply saved theme before first paint; default is dark --}}
         <script>
             (function(){
-                if(localStorage.getItem('theme')==='dark'||
-                  (!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){
+                if(localStorage.getItem('theme')!=='light'){
                     document.documentElement.classList.add('dark');
                 }
             })();
