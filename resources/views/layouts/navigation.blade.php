@@ -25,7 +25,7 @@
             </button>
             @auth
                 <span class="navbar-user">Welcome, {{ Auth::user()->name }}</span>
-                <a href="{{ route('profile.edit') }}" class="btn btn-ghost btn-sm">Profile</a>
+                <a href="{{ route('profile.edit') }}" class="btn btn-ghost btn-sm {{ request()->routeIs('profile.*') ? 'active' : '' }}">Profile</a>
                 <form method="POST" action="{{ route('logout') }}" style="margin:0;">
                     @csrf
                     <button type="submit" class="btn btn-primary btn-sm">Log Out</button>
@@ -51,6 +51,7 @@
             @if(auth()->user()->is_admin)
                 <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">Users</a>
             @endif
+            <a href="{{ route('profile.edit') }}" class="btn btn-ghost btn-sm {{ request()->routeIs('profile.*') ? 'active' : '' }}">Profile</a>
         @endauth
     </div>
 </nav>
