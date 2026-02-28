@@ -34,18 +34,26 @@ class Event extends Model
 
     /**
      * Accessor for number of confirmed attendees.
+     *
+     * When the query included `withCount(['registrations as confirmed_count' => ...])`,
+     * the value is already in `$this->attributes` — avoid a second COUNT query.
      */
     public function getConfirmedCountAttribute(): int
     {
+        if (array_key_exists('confirmed_count', $this->attributes)) {
+            return (int) $this->attributes['confirmed_count'];
+        }
+
         return $this->confirmedRegistrations()->count();
     }
 
     /**
      * Accessor for available confirmed slots remaining.
+     * Reuses getConfirmedCountAttribute so withCount pre-loading is respected.
      */
     public function getRemainingSpotAttribute(): int
     {
-        return max(0, $this->remainingCapacity());
+        return max(0, $this->capacity - $this->confirmed_count);
     }
 
     /**
@@ -74,10 +82,11 @@ class Event extends Model
 
     /**
      * Remaining slots using confirmed registrations only.
+     * Delegates to the confirmed_count accessor so eager-loaded values are reused.
      */
     public function remainingCapacity(): int
     {
-        return (int) max(0, $this->capacity - $this->registrations()->where('status', 'confirmed')->count());
+        return (int) max(0, $this->capacity - $this->confirmed_count);
     }
 
     /**

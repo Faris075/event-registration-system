@@ -28,7 +28,10 @@ class EventController extends Controller
                 ->whereRaw('capacity > (SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?)', ['confirmed']);
         }
 
+        // withCount pre-loads confirmed_count for every event in one aggregated query
+        // instead of firing a separate COUNT per event card (N+1 prevention).
         $events = $eventsQuery
+            ->withCount(['registrations as confirmed_count' => fn ($q) => $q->where('status', 'confirmed')])
             ->latest('date_time')
             ->paginate(10);
 
@@ -53,6 +56,10 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
+        // Eager-load confirmed count for this single event to avoid an extra query
+        // from the remaining_spot accessor used in the view.
+        $event->loadCount(['registrations as confirmed_count' => fn ($q) => $q->where('status', 'confirmed')]);
+
         $isBooked = false;
         if (Auth::check() && ! Auth::user()->is_admin) {
             $userEmail = Auth::user()->email;
