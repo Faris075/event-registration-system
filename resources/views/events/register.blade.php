@@ -7,6 +7,19 @@
         <div class="alert alert-error">{{ $errors->first('registration') }}</div>
     @endif
 
+    {{-- Same-day conflict warning: user already has a confirmed registration on this day --}}
+    @if(!empty($conflictEvents) && $conflictEvents->isNotEmpty())
+        <div class="alert alert-warn" style="display:flex;gap:0.75rem;align-items:flex-start;" id="conflict-warning">
+            <span style="font-size:1.2rem;flex-shrink:0;">⚠️</span>
+            <div>
+                <strong>Scheduling conflict:</strong> You already have a confirmed registration for
+                <strong>{{ $conflictEvents->pluck('title')->join(', ') }}</strong>
+                on this same day ({{ $event->date_time->format('M d, Y') }}).
+                You can still register, but you may not be able to attend both events.
+            </div>
+        </div>
+    @endif
+
     @if($event->remaining_spot <= 0 && $event->status === 'published')
         <div class="alert alert-warn">This event is fully booked. Registering will add you to the waitlist.</div>
     @endif

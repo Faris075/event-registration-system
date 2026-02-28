@@ -9,8 +9,9 @@ use App\Models\Event;
 use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -46,7 +47,9 @@ class EventRegistrationController extends Controller
                 ->withErrors(['registration' => 'Registration is closed — this event has already taken place.']);
         }
 
-        return view('events.register', compact('event'));
+        $conflictEvents = $this->sameDayConflicts($event);
+
+        return view('events.register', compact('event', 'conflictEvents'));
     }
 
     /**
@@ -72,6 +75,16 @@ class EventRegistrationController extends Controller
 
         // Hold registration details in session until payment is completed.
         session(['pending_registration.' . $event->id => $validated]);
+
+        // If there's a same-day conflict, carry the warning through to the payment page.
+        $conflicts = $this->sameDayConflicts($event);
+        if ($conflicts->isNotEmpty()) {
+            $conflictTitles = $conflicts->pluck('title')->join(', ');
+            session()->flash(
+                'conflict_warning',
+                'Note: you are already registered for another event on this day (' . $conflictTitles . '). Proceeding anyway.'
+            );
+        }
 
         return redirect()->route('events.payment.page', $event);
     }
@@ -596,5 +609,37 @@ class EventRegistrationController extends Controller
 
             return $promotedAttendee?->name;
         });
+    }
+
+    /**
+     * Return events that the currently authenticated user is already confirmed for
+     * on the same calendar day as the given event (excluding the event itself).
+     *
+     * Used to surface a warning — registration is still allowed.
+     *
+     * @return Collection<int, Event>
+     */
+    protected function sameDayConflicts(Event $event): Collection
+    {
+        if (! Auth::check()) {
+            return collect();
+        }
+
+        $attendee = Attendee::where('email', Auth::user()->email)->first();
+
+        if (! $attendee) {
+            return collect();
+        }
+
+        $eventDate = $event->date_time->toDateString(); // 'Y-m-d'
+
+        return Event::query()
+            ->whereHas('registrations', function ($q) use ($attendee) {
+                $q->where('attendee_id', $attendee->id)
+                  ->where('status', 'confirmed');
+            })
+            ->whereDate('date_time', $eventDate)
+            ->where('id', '!=', $event->id)
+            ->get(['id', 'title', 'date_time']);
     }
 }

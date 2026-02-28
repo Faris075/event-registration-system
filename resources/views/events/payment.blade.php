@@ -25,6 +25,13 @@
         <div class="alert alert-error">{{ $errors->first('payment') }}</div>
     @endif
 
+    @if(session('conflict_warning'))
+        <div class="alert alert-warn" style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="font-size:1.2rem;flex-shrink:0;">⚠️</span>
+            <div>{{ session('conflict_warning') }}</div>
+        </div>
+    @endif
+
     {{-- Order summary --}}
     <div class="card" style="margin-bottom:1rem;padding:1.2rem 1.5rem;">
         <p style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:0 0 0.4rem;">Order Summary</p>
