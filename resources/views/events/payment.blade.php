@@ -172,16 +172,42 @@
     }
 
     /* ── Card number: format + brand ───────────────────────────── */
+    function formatCardNumber(raw) {
+        // Strip non-digits, cap at 16, then insert a space after every 4th digit.
+        const digits = raw.replace(/\D/g, '').substring(0, 16);
+        return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+    }
+
+    function validateCardNumber(digits) {
+        if (!digits) {
+            clearError('card-number-input', 'card-number-error');
+            return;
+        }
+        if (digits.length < 13 || digits.length > 16) {
+            showError('card-number-input', 'card-number-error', 'Card number must be 13–16 digits.');
+            return;
+        }
+        if (!detectBrand(digits)) {
+            showError('card-number-input', 'card-number-error', 'Card number not recognised — please check your card details.');
+            return;
+        }
+        clearError('card-number-input', 'card-number-error');
+    }
+
     if (cardInput) {
-        cardInput.addEventListener('input', function () {
-            const digits = this.value.replace(/\D/g, '').substring(0, 16);
-            this.value = digits.replace(/(.{4})/g, '$1 ').trim();
-            updateBadge(digits);
-            if (digits && (digits.length < 13 || digits.length > 16)) {
-                showError('card-number-input', 'card-number-error', 'Card number must be 13–16 digits.');
-            } else {
-                clearError('card-number-input', 'card-number-error');
-            }
+        // Handle both typing and paste.
+        ['input', 'paste'].forEach(function (evt) {
+            cardInput.addEventListener(evt, function () {
+                // Use setTimeout so paste value is available in the handler.
+                setTimeout(() => {
+                    const digits = this.value.replace(/\D/g, '').substring(0, 16);
+                    this.value = formatCardNumber(this.value);
+                    updateBadge(digits);
+                    // Only validate brand once the user has typed enough digits to detect.
+                    if (digits.length >= 4) validateCardNumber(digits);
+                    else clearError('card-number-input', 'card-number-error');
+                }, 0);
+            });
         });
         updateBadge(''); // initialise on page load
     }
@@ -249,9 +275,9 @@
             if (digits.length < 13 || digits.length > 16) {
                 showError('card-number-input', 'card-number-error', 'Enter a valid 13–16 digit card number.');
                 valid = false;
-            }
-            if (!detectBrand(digits)) {
-                // warn but don't block (demo form)
+            } else if (!detectBrand(digits)) {
+                showError('card-number-input', 'card-number-error', 'Card number not recognised — please check your card details.');
+                valid = false;
             }
 
             const expVal = expiryInput?.value ?? '';
