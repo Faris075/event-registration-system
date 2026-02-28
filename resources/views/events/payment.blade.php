@@ -183,15 +183,13 @@
             clearError('card-number-input', 'card-number-error');
             return;
         }
-        if (digits.length < 13 || digits.length > 16) {
-            showError('card-number-input', 'card-number-error', 'Card number must be 13–16 digits.');
-            return;
-        }
+        // Real-time: don't nag about length while the user is still typing.
+        // Only flag an unrecognised brand (we have enough prefix after 4 digits).
         if (!detectBrand(digits)) {
             showError('card-number-input', 'card-number-error', 'Card number not recognised — please check your card details.');
-            return;
+        } else {
+            clearError('card-number-input', 'card-number-error');
         }
-        clearError('card-number-input', 'card-number-error');
     }
 
     if (cardInput) {
