@@ -61,7 +61,7 @@
             </div>
             <div>
                 <p style="margin:0;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;">Price</p>
-                <p style="margin:0.25rem 0 0;font-size:0.95rem;font-weight:600;">{{ $event->price ? $currencySymbol.number_format($event->price, 2) : 'Free' }}</p>
+                <p style="margin:0.25rem 0 0;font-size:0.95rem;font-weight:600;">{{ $event->price ? $currencySymbol.number_format(\App\Models\User::convertPrice($event->price, $currencyCode), 2) : 'Free' }}</p>
             </div>
         </div>
 
@@ -76,7 +76,7 @@
                     <span class="badge badge-confirmed" style="padding:0.5rem 1rem;font-size:0.82rem;">✅ You're Registered</span>
                 @elseif($event->status === 'published' && $event->remaining_spot > 0 && !$event->isCompleted())
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-success">Register Now</a>
-                @elseif($event->status === 'published' && $event->remaining_spot <= 0)
+                @elseif($event->status === 'published' && $event->remaining_spot <= 0 && !$event->isCompleted())
                     <a href="{{ route('events.register.page', $event) }}" class="btn btn-primary">Join Waitlist</a>
                 @else
                     <span class="badge badge-completed" style="padding:0.5rem 1rem;font-size:0.82rem;">Registration Unavailable</span>

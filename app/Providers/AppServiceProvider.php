@@ -13,13 +13,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Share currency symbol + list with every view so price displays are consistent.
+        // Share currency symbol, rate and list with every view so price displays are consistent.
         View::composer('*', function ($view) {
             $user           = Auth::user();
             $currencies     = User::CURRENCIES;
             $currencyCode   = $user?->currency ?? 'USD';
             $currencySymbol = $currencies[$currencyCode]['symbol'] ?? '$';
-            $view->with(compact('currencies', 'currencyCode', 'currencySymbol'));
+            $currencyRate   = $currencies[$currencyCode]['rate']   ?? 1.0;
+            $view->with(compact('currencies', 'currencyCode', 'currencySymbol', 'currencyRate'));
         });
     }
 }
