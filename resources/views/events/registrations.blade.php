@@ -19,11 +19,11 @@
     @endif
 
     <div class="stats-row">
-        <div class="stat-chip"><span>📅 Date</span><strong>{{ $event->date_time }}</strong></div>
-        <div class="stat-chip"><span>🎟 Capacity</span><strong>{{ $event->capacity }}</strong></div>
-        <div class="stat-chip"><span>✅ Confirmed</span><strong>{{ $event->confirmed_count }}</strong></div>
-        <div class="stat-chip"><span>⏳ Waitlist cap</span><strong>{{ $event->waitlistCapacity() }} spots</strong></div>
-        <div class="stat-chip"><span>🔓 Admin overrides</span><strong>{{ $event->adminOverrideCount() }} / 5</strong></div>
+        <div class="stat-chip"><span>📅 Date:</span><strong> {{ \Carbon\Carbon::parse($event->date_time)->format('M d, Y · g:i A') }}</strong></div>
+        <div class="stat-chip"><span>🎟 Capacity:</span><strong> {{ $event->capacity }}</strong></div>
+        <div class="stat-chip"><span>✅ Confirmed:</span><strong> {{ $event->confirmed_count }}</strong></div>
+        <div class="stat-chip"><span>⏳ Waitlist cap:</span><strong> {{ $event->waitlistCapacity() }} spots</strong></div>
+        <div class="stat-chip"><span>🔓 Admin overrides:</span><strong> {{ $event->adminOverrideCount() }} / 5</strong></div>
     </div>
 
     {{-- Admin Force-Add Form --}}

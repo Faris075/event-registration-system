@@ -2,23 +2,23 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Share currency symbol + list with every view so price displays are consistent.
+        View::composer('*', function ($view) {
+            $user           = auth()->user();
+            $currencies     = User::CURRENCIES;
+            $currencyCode   = $user?->currency ?? 'USD';
+            $currencySymbol = $currencies[$currencyCode]['symbol'] ?? '$';
+            $view->with(compact('currencies', 'currencyCode', 'currencySymbol'));
+        });
     }
 }

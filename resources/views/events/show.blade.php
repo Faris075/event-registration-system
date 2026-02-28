@@ -61,7 +61,7 @@
             </div>
             <div>
                 <p style="margin:0;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;">Price</p>
-                <p style="margin:0.25rem 0 0;font-size:0.95rem;font-weight:600;">{{ $event->price ? '$'.$event->price : 'Free' }}</p>
+                <p style="margin:0.25rem 0 0;font-size:0.95rem;font-weight:600;">{{ $event->price ? $currencySymbol.number_format($event->price, 2) : 'Free' }}</p>
             </div>
         </div>
 

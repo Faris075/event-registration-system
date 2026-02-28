@@ -23,6 +23,21 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Supported currencies: code => [symbol, name].
+     */
+    public const CURRENCIES = [
+        'USD' => ['symbol' => '$',    'name' => 'US Dollar'],
+        'EUR' => ['symbol' => '€',    'name' => 'Euro'],
+        'GBP' => ['symbol' => '£',    'name' => 'British Pound'],
+        'SAR' => ['symbol' => 'SAR',  'name' => 'Saudi Riyal'],
+        'AED' => ['symbol' => 'AED',  'name' => 'UAE Dirham'],
+        'JPY' => ['symbol' => '¥',    'name' => 'Japanese Yen'],
+        'CAD' => ['symbol' => 'CA$',  'name' => 'Canadian Dollar'],
+        'AUD' => ['symbol' => 'A$',   'name' => 'Australian Dollar'],
+        'EGP' => ['symbol' => 'EGP',  'name' => 'Egyptian Pound'],
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -32,9 +47,18 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'currency',
         'security_question',
         'security_answer',
     ];
+
+    /**
+     * Resolved currency symbol for the user's chosen currency.
+     */
+    public function getCurrencySymbolAttribute(): string
+    {
+        return self::CURRENCIES[$this->currency ?? 'USD']['symbol'] ?? '$';
+    }
 
     /**
      * The attributes that should be hidden for serialization.

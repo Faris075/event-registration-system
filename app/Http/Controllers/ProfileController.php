@@ -57,4 +57,18 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Update the user's display currency.
+     */
+    public function updateCurrency(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'currency' => ['required', 'string', 'in:' . implode(',', array_keys(\App\Models\User::CURRENCIES))],
+        ]);
+
+        $request->user()->update(['currency' => $request->currency]);
+
+        return Redirect::route('profile.edit')->with('status', 'currency-updated');
+    }
 }

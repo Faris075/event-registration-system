@@ -32,13 +32,33 @@
                 <article class="event-card">
                     <div class="event-card-head">
                         <h2 class="event-card-title">{{ $event->title }}</h2>
-                        <span class="{{ $badgeClass }}">{{ ucfirst($event->status) }}</span>
+                        @auth
+                            @if(auth()->user()->is_admin)
+                                <span class="{{ $badgeClass }}">{{ ucfirst($event->status) }}</span>
+                            @endif
+                        @endauth
                     </div>
 
                     <div class="event-card-meta">
                         <span>📍 {{ $event->location }}</span>
                         <span>🗓 {{ $event->date_time->format('M d, Y · g:i A') }}</span>
-                        <span>🎟 {{ $event->remaining_spot }} spot{{ $event->remaining_spot === 1 ? '' : 's' }} left</span>
+                        @if($event->remaining_spot > 0)
+                            <span>🎟 {{ $event->remaining_spot }} spot{{ $event->remaining_spot === 1 ? '' : 's' }} left</span>
+                        @else
+                            <span style="color:var(--danger);">🎟 Fully Booked</span>
+                        @endif
+                        @if($event->price)
+                            <span>💰 {{ $currencySymbol }}{{ number_format($event->price, 2) }}</span>
+                        @else
+                            <span>💰 Free</span>
+                        @endif
+                        @auth
+                            @if(auth()->user()->is_admin)
+                                @if($event->date_time->isPast())
+                                    <span class="badge badge-completed" style="font-size:0.7rem;">Past</span>
+                                @endif
+                            @endif
+                        @endauth
                     </div>
 
                     <div class="event-card-actions">

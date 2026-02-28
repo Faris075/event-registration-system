@@ -37,7 +37,7 @@
             <span style="font-size:0.9rem;color:var(--muted);">Registration fee</span>
             <span style="font-weight:700;font-size:1.1rem;color:var(--accent);">
                 @if($event->price ?? 0 > 0)
-                    ${{ number_format($event->price, 2) }}
+                    {{ $currencySymbol }}{{ number_format($event->price, 2) }}
                 @else
                     Free
                 @endif

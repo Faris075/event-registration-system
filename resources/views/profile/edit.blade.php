@@ -13,6 +13,10 @@
             @include('profile.partials.update-password-form')
         </div>
 
+        <div class="card" style="margin-bottom:1.25rem;">
+            @include('profile.partials.update-currency-form')
+        </div>
+
         <div class="card">
             @include('profile.partials.delete-user-form')
         </div>

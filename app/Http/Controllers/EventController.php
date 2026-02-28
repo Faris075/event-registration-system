@@ -16,10 +16,16 @@ class EventController extends Controller
      */
     public function index()
     {
+        $isAdmin = Auth::check() && Auth::user()->is_admin;
         $eventsQuery = Event::query();
 
-        if (! Auth::check() || ! Auth::user()->is_admin) {
-            $eventsQuery->where('status', 'published');
+        if (! $isAdmin) {
+            $eventsQuery
+                ->where('status', 'published')
+                // Hide past events
+                ->where('date_time', '>', now())
+                // Hide fully-booked events (no confirmed spots remaining)
+                ->whereRaw('capacity > (SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?)', ['confirmed']);
         }
 
         $events = $eventsQuery
@@ -39,7 +45,7 @@ class EventController extends Controller
             }
         }
 
-        return view('events.index', compact('events', 'bookedEventIds'));
+        return view('events.index', compact('events', 'bookedEventIds', 'isAdmin'));
     }
 
     /**
