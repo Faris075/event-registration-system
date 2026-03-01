@@ -1,3 +1,40 @@
+{{-- ─── Cancel-registration confirmation modal ──────────────────────────────── --}}
+<div id="cancel-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+    <div style="background:var(--card-bg,#fff);border-radius:0.75rem;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+        <h3 style="font-size:1.1rem;font-weight:700;margin:0 0 0.5rem;">Cancel Registration?</h3>
+        <p id="cancel-modal-body" style="color:var(--muted);margin:0 0 1.5rem;line-height:1.5;"></p>
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+            <button type="button" onclick="closeCancelModal()"
+                    style="padding:0.5rem 1.25rem;border-radius:0.5rem;border:1.5px solid var(--border,#e5e7eb);background:transparent;cursor:pointer;font-size:0.9rem;">
+                Keep Registration
+            </button>
+            <button type="button" id="cancel-modal-confirm"
+                    style="padding:0.5rem 1.25rem;border-radius:0.5rem;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:0.9rem;font-weight:600;">
+                Yes, Cancel It
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openCancelModal(form, eventTitle, isPaid) {
+        const modal = document.getElementById('cancel-modal');
+        const body  = document.getElementById('cancel-modal-body');
+        let msg = 'Are you sure you want to cancel your registration for <strong>' + eventTitle + '</strong>? This cannot be undone.';
+        if (isPaid) msg += '<br><br>💳 <strong>Your payment will be refunded.</strong>';
+        body.innerHTML = msg;
+        document.getElementById('cancel-modal-confirm').onclick = function () { form.submit(); };
+        modal.style.display = 'flex';
+    }
+    function closeCancelModal() {
+        document.getElementById('cancel-modal').style.display = 'none';
+    }
+    // Close if backdrop clicked
+    document.getElementById('cancel-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeCancelModal();
+    });
+</script>
+
 <x-app-layout>
     <div class="page-wrap">
 
@@ -38,6 +75,7 @@
                                 <th>Event</th>
                                 <th>Date</th>
                                 <th>Status</th>
+                                <th>Payment</th>
                                 <th>Registered On</th>
                                 <th></th>
                             </tr>
@@ -61,6 +99,16 @@
                                             <span style="font-size:0.75rem;color:var(--muted);"> #{{ $reg->waitlist_position }}</span>
                                         @endif
                                     </td>
+                                    <td>
+                                        @php
+                                            $payBadge = match($reg->payment_status ?? 'pending') {
+                                                'paid'     => 'badge-confirmed',
+                                                'refunded' => 'badge-cancelled',
+                                                default    => 'badge-waitlisted',
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $payBadge }}">{{ ucfirst($reg->payment_status ?? 'pending') }}</span>
+                                    </td>
                                     <td>{{ \Carbon\Carbon::parse($reg->registration_date)->format('M d, Y') }}</td>
                                     <td>
                                         <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
@@ -68,10 +116,16 @@
                                             <a href="{{ route('events.show', $reg->event) }}" class="btn btn-ghost btn-sm">View</a>
                                         @endif
                                         @if($reg->status !== 'cancelled' && $reg->event && \Carbon\Carbon::parse($reg->event->date_time)->isFuture())
-                                            <form method="POST" action="{{ route('events.registration.cancel', [$reg->event_id, $reg->id]) }}" onsubmit="return confirm('Cancel your registration for \'{{ addslashes($reg->event->title) }}\'? This cannot be undone.');">
+                                            @php $isPaid = ($reg->payment_status === 'paid') ? 'true' : 'false'; @endphp
+                                            <form method="POST" action="{{ route('events.registration.cancel', [$reg->event_id, $reg->id]) }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">Cancel</button>
+                                                <button type="button"
+                                                        onclick="openCancelModal(this.closest('form'), '{{ addslashes($reg->event->title) }}', {{ $isPaid }})"
+                                                        class="btn btn-ghost btn-sm"
+                                                        style="color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);">
+                                                    Cancel
+                                                </button>
                                             </form>
                                         @endif
                                         </div>
