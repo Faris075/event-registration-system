@@ -1,11 +1,27 @@
 <?php
+// ============================================================
+// Model: User
+// ------------------------------------------------------------
+// Authentication identity model (extends Laravel Breeze scaffold).
+// Separate from Attendee: a User has login credentials; an Attendee
+// is a contact record linked by matching email address.
+//
+// Best practices applied:
+//  ✔ $fillable whitelist prevents mass-assignment vulnerabilities
+//  ✔ $hidden hides password + remember_token from JSON/array output
+//  ✔ 'hashed' cast in casts() auto-bcrypts password on assignment
+//  ✔ CURRENCIES constant keeps exchange-rate data centralised
+//  ✔ convertPrice() handles null gracefully (returns 0.0)
+//  ✔ getCurrencySymbolAttribute() provides a safe fallback ('$')
+// ============================================================
 
 namespace App\Models;
 
+// Uncomment the line below to require email verification before login:
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // Enables User::factory() for tests/seeders
+use Illuminate\Foundation\Auth\User as Authenticatable; // Base class: wraps auth contracts & guards
+use Illuminate\Notifications\Notifiable;               // Adds ->notify(), mail/database channels
 
 /**
  * Authenticatable user model.
@@ -20,7 +36,8 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory,  // Exposes User::factory() for database seeding and automated tests
+        Notifiable;  // Enables $user->notify(new SomeNotification) pattern
 
     /**
      * Supported currencies: code => [symbol, name, rate].
@@ -50,12 +67,15 @@ class User extends Authenticatable
      */
     public static function convertPrice(?float $usdPrice, string $currency): float
     {
+        // Guard: null or 0.0 USD price means the event is free in every currency.
         if (! $usdPrice) {
-            return 0.0;
+            return 0.0; // Return typed float, not int 0, to match return-type declaration
         }
 
+        // Null-coalesce to 1.0 so an unknown currency code simply leaves the USD price unchanged.
         $rate = self::CURRENCIES[$currency]['rate'] ?? 1.0;
 
+        // round(..., 2) avoids floating-point artifacts like 0.9199999… → 0.92
         return round($usdPrice * $rate, 2);
     }
 
@@ -65,20 +85,27 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'is_admin',
-        'currency',
-        'security_question',
-        'security_answer',
+        'name',              // Display name; shown in UI and confirmation emails
+        'email',             // Unique login identifier; must match Attendee.email to link history
+        'password',          // Auto-hashed by the 'hashed' cast below — never store plain text
+        'is_admin',          // Boolean flag; when true, unlocks admin routes via IsAdmin middleware
+        'currency',          // ISO 4217 code (USD|EUR|GBP…); controls display currency on all prices
+        'security_question', // Numeric ID referencing SecurityQuestionController::$questions map
+        'security_answer',   // bcrypt hash of the lowercase-trimmed answer string
     ];
 
     /**
-     * Resolved currency symbol for the user's chosen currency.
+     * Accessor: resolved currency symbol string (e.g. '$', '€', '£').
+     * Accessed as $user->currency_symbol in Blade.
+     *
+     * Double null-coalesce pattern:
+     *  1. `$this->currency ?? 'USD'`  — default to USD if the column is null (fresh account)
+     *  2. `... ?? '$'`                — fallback symbol if the currency code is somehow unknown
      */
     public function getCurrencySymbolAttribute(): string
     {
+        // First coalesce: currency column may be null for accounts created before the column existed.
+        // Second coalesce: safety net in case the CURRENCIES constant is modified later.
         return self::CURRENCIES[$this->currency ?? 'USD']['symbol'] ?? '$';
     }
 
@@ -88,8 +115,10 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        // SECURITY: these fields will NOT appear in $user->toArray() / JSON responses.
+        // This prevents accidental exposure via API routes or logging.
+        'password',       // Hashed; never expose even the hash outside the auth layer
+        'remember_token', // Long-lived session token; exposure allows session hijacking
     ];
 
     /**
@@ -100,7 +129,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            // Cast the nullable timestamp to a Carbon instance so ->diffForHumans() etc. work.
             'email_verified_at' => 'datetime',
+            // 'hashed' cast: Laravel automatically bcrypt-hashes the plain-text value
+            // when $user->password = 'plain'; no manual Hash::make() needed here.
             'password' => 'hashed',
         ];
     }
