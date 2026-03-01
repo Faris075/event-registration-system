@@ -663,8 +663,8 @@ html.dark .auth-input {
 	padding: 0.9rem 1rem;
 	border: none;
 	border-radius: var(--radius-sm);
-	background: var(--primary);
-	color: #fff;
+	background: #1f2937;
+	color: #ffffff;
 	font-size: 1rem;
 	font-weight: 700;
 	cursor: pointer;
@@ -672,8 +672,12 @@ html.dark .auth-input {
 	transition: background 0.18s, transform 0.12s;
 }
 
-.auth-btn:hover   { background: var(--primary-hover); transform: translateY(-1px); }
+.auth-btn:hover   { background: #111827; transform: translateY(-1px); }
 .auth-btn:active  { transform: translateY(0); }
+
+/* Dark mode: use accent so white text always has contrast */
+html.dark .auth-btn       { background: #4f46e5; color: #ffffff; }
+html.dark .auth-btn:hover { background: #4338ca; }
 
 .auth-center {
 	margin-top: 1.1rem;
