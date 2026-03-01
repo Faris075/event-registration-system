@@ -60,7 +60,7 @@
 
             <p class="auth-center" style="margin-top:0.5rem;font-size:0.85rem;">
                 By signing in, you agree to the
-                <a href="#" class="auth-link">Terms and Conditions</a>.
+                <a href="{{ route('terms') }}" target="_blank" class="auth-link">Terms and Conditions</a>.
             </p>
         </div>
     @endauth
