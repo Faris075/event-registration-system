@@ -66,7 +66,8 @@
 
                         @if($event->status === 'published' && !$event->date_time->isPast())
                             @if(in_array($event->id, $bookedEventIds->toArray() ?? []))
-                                <span class="badge badge-confirmed" style="padding:0.35rem 0.75rem;">Booked</span>
+                                {{-- User is already registered: show badge only; View button is always rendered above --}}
+                                <span class="badge badge-confirmed" style="padding:0.35rem 0.75rem;">✅ Registered</span>
                             @elseif($event->remaining_spot > 0)
                                 <a href="{{ route('events.register.page', $event) }}" class="btn btn-success btn-sm">Register</a>
                             @else
