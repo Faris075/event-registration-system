@@ -1,6 +1,6 @@
 # Event Registration System
 
-A full-stack Laravel 11 web application for event discovery, attendee registration, waitlist management, and admin controls — built as part of the MIMO Codes Developer Assessment 2026.
+A full-stack Laravel 12 web application for event discovery, attendee registration, waitlist management, and admin controls — built as part of the MIMO Codes Developer Assessment 2026.
 
 ---
 
@@ -56,7 +56,7 @@ A full-stack Laravel 11 web application for event discovery, attendee registrati
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | PHP 8.2, Laravel 11 |
+| Backend | PHP 8.2, Laravel 12 |
 | Frontend | Blade templates, custom CSS (CSS custom properties + dark/light mode), Vite |
 | Database | MySQL (SQLite supported for local dev) |
 | Mail | SMTP (configurable via `.env`; Mailtrap recommended for local dev) |
