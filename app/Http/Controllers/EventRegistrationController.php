@@ -670,9 +670,13 @@ class EventRegistrationController extends Controller
         $successMessage = 'Registration updated successfully.';
 
         // cancelAndPromote() handles status; update payment_status separately if changed.
-        // This separation keeps the transaction in cancelAndPromote() focused and minimal.
-        if ($validated['status'] === 'cancelled' && $validated['payment_status'] !== $registration->payment_status) {
-            $registration->update(['payment_status' => $validated['payment_status']]);
+        // refresh() reloads the model so payment_status reflects any DB changes made inside
+        // the cancelAndPromote() transaction before we compare and potentially update it.
+        if ($validated['status'] === 'cancelled') {
+            $registration->refresh();
+            if ($validated['payment_status'] !== $registration->payment_status) {
+                $registration->update(['payment_status' => $validated['payment_status']]);
+            }
         }
 
         if ($promotedAttendeeName) {

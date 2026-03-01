@@ -8,7 +8,7 @@
 //       GET  /security-question  → edit()   – show question picker
 //       PATCH /security-question → update() – save hashed answer
 //
-//  2. PASSWORD RECOVERY (guests — 4-step flow):
+//  2. PASSWORD RECOVERY (guests — 6-step flow):
 //       GET  /recover-password          → recoverForm()    – enter email
 //       POST /recover-password          → recoverLookup()  – find user
 //       GET  /recover-password/answer   → answerForm()     – show question
@@ -33,6 +33,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;                   // Eloquent user model
 use Illuminate\Http\RedirectResponse; // Return type for redirect responses
 use Illuminate\Http\Request;          // HTTP input / validation
 use Illuminate\Support\Facades\Auth;  // Auth guard (login + current user)
@@ -152,7 +153,7 @@ class SecurityQuestionController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
         // Intentionally vague: same message for "no account" and "no security question".
         if (! $user || ! $user->security_question) {
@@ -174,8 +175,8 @@ class SecurityQuestionController extends Controller
      */
     public function answerForm(): View|RedirectResponse
     {
-        $email = session('recovery_email');                                          // Read step-2 session
-        $user  = $email ? \App\Models\User::where('email', $email)->first() : null; // Look up user
+        $email = session('recovery_email');                                    // Read step-2 session
+        $user  = $email ? User::where('email', $email)->first() : null; // Look up user
 
         if (! $user) {
             // Session expired or user navigated directly — restart from the beginning.
@@ -199,7 +200,7 @@ class SecurityQuestionController extends Controller
         $request->validate(['security_answer' => ['required', 'string']]);
 
         $email = session('recovery_email');
-        $user  = $email ? \App\Models\User::where('email', $email)->first() : null;
+        $user  = $email ? User::where('email', $email)->first() : null;
 
         if (! $user) {
             return redirect()->route('security-question.recover'); // Session expired
@@ -253,10 +254,10 @@ class SecurityQuestionController extends Controller
 
         $email = session('recovery_email');
         // firstOrFail throws a 404 if the user was deleted between steps — safe fallback.
-        $user  = \App\Models\User::where('email', $email)->firstOrFail();
+        $user  = User::where('email', $email)->firstOrFail();
 
         // Hash::make bcrypts the new password before storage.
-        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+        $user->update(['password' => Hash::make($request->password)]);
 
         // Clear all recovery session keys — tokens are single-use by design.
         session()->forget(['recovery_email', 'recovery_verified']);
