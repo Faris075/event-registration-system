@@ -48,8 +48,8 @@
             <div class="form-row">
                 <div class="form-field">
                     <label class="form-label">Phone <span class="text-muted" style="font-weight:400;">(optional)</span></label>
-                    <input type="tel" name="phone" id="phone" value="{{ old('phone') }}" class="form-input" placeholder="+1 555 000 0000"
-                           pattern="^\+?[0-9\s\-\(\)]{7,20}$" maxlength="20" autocomplete="tel">
+                    <input type="text" name="phone" id="phone" value="{{ old('phone') }}" class="form-input" placeholder="e.g. 0501234567"
+                           pattern="^[0-9]{9,11}$" maxlength="11" autocomplete="tel" inputmode="numeric">
                     <span class="form-error" id="phone-error" style="display:none;"></span>
                     @error('phone') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
@@ -113,8 +113,8 @@
 
     document.getElementById('phone')?.addEventListener('input', function () {
         if (!this.value) { clearError('phone', 'phone-error'); return; }
-        const valid = /^\+?[0-9\s\-\(\)]{7,20}$/.test(this.value.trim());
-        valid ? clearError('phone', 'phone-error') : showError('phone', 'phone-error', 'Enter a valid phone number (7–20 digits, +, spaces, dashes allowed).');
+        const valid = /^[0-9]{9,11}$/.test(this.value.trim());
+        valid ? clearError('phone', 'phone-error') : showError('phone', 'phone-error', 'Phone number must be 9–11 digits only (no spaces or symbols).');
     });
 
     form.addEventListener('submit', function (e) {
@@ -133,8 +133,8 @@
         }
 
         const phone = document.getElementById('phone');
-        if (phone?.value && !/^\+?[0-9\s\-\(\)]{7,20}$/.test(phone.value.trim())) {
-            showError('phone', 'phone-error', 'Enter a valid phone number.');
+        if (phone?.value && !/^[0-9]{9,11}$/.test(phone.value.trim())) {
+            showError('phone', 'phone-error', 'Phone number must be 9–11 digits only (no spaces or symbols).');
             valid = false;
         }
 

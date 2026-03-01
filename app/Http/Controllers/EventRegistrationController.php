@@ -117,14 +117,16 @@ class EventRegistrationController extends Controller
         $validated = $request->validate([
             'name'           => ['required', 'string', 'max:255'],
             'email'          => ['required', 'email', 'max:255'],
-            // Regex accepts international formats: +44 7700 900000, (123) 456-7890, etc.
-            'phone'          => ['nullable', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            // 'string' ensures the value is never cast as an integer.
+            // Regex enforces digits only, between 9 and 11 characters.
+            'phone'          => ['nullable', 'string', 'regex:/^[0-9]{9,11}$/'],
             'company'        => ['nullable', 'string', 'max:255'],
             // 'accepted' rule ensures the value is '1', 'true', 'on', or 'yes'.
             'terms_accepted' => ['accepted'],
         ], [
             // Custom message overrides the default "The terms accepted field must be accepted."
             'terms_accepted.accepted' => 'You must accept the Terms & Conditions to register.',
+            'phone.regex'             => 'Phone number must be between 9 and 11 digits (numbers only).',
         ]);
 
         // Store validated data in session under an event-scoped key.
@@ -411,8 +413,11 @@ class EventRegistrationController extends Controller
         $validated = $request->validate([
             'name'    => ['required', 'string', 'max:255'],
             'email'   => ['required', 'email', 'max:255'],
-            'phone'   => ['nullable', 'regex:/^\+?[0-9\s\-\(\)]{7,20}$/'],
+            // 'string' prevents integer casting; regex enforces digits only, 9–11 characters.
+            'phone'   => ['nullable', 'string', 'regex:/^[0-9]{9,11}$/'],
             'company' => ['nullable', 'string', 'max:255'],
+        ], [
+            'phone.regex' => 'Phone number must be between 9 and 11 digits (numbers only).',
         ]);
 
         try {
