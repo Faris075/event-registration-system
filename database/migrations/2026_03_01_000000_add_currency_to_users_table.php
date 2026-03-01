@@ -6,7 +6,7 @@
 // in a currency familiar to the user.
 //
 // Supported values are defined as constants in the User model (User::CURRENCIES):
-//   USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, MXN
+//   USD, EUR, GBP, SAR, AED, JPY, CAD, AUD, EGP
 //
 // The actual conversion is performed in User::convertPrice() and
 // User::getCurrencySymbolAttribute() — the DB stores only the ISO code.

@@ -115,9 +115,9 @@ class AttendeeRegistrationSeeder extends Seeder
                     }
 
                     $status           = 'waitlisted';
-                    $waitlistPosition = Registration::where('event_id', $event->id)
+                    $waitlistPosition = (Registration::where('event_id', $event->id)
                         ->where('status', 'waitlisted')
-                        ->max('waitlist_position') + 1;
+                        ->max('waitlist_position') ?? 0) + 1; // null-safe: first waitlisted → position 1
                 }
 
                 Registration::create([

@@ -53,15 +53,23 @@ class EventController extends Controller
 
         if (! $isAdmin) {
             $eventsQuery
-                ->where('status', 'published')                    // Only publicly-visible events
-                ->where('date_time', '>', now())                  // Exclude past events
-                // Subquery filter: hide events where confirmed seats are all taken.
-                // Using whereRaw here because Eloquent doesn't have a native correlated-subquery
-                // scope for "column > COUNT(related rows)". The bound parameter prevents SQL injection.
-                ->whereRaw(
-                    'capacity > (SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?)',
-                    ['confirmed']
-                );
+                ->where('status', 'published')   // Only publicly-visible events
+                ->where('date_time', '>', now())  // Exclude past events
+                // Show events that still have open CONFIRMED seats OR still have WAITLIST slots.
+                // Without this OR-branch, fully-booked events become invisible to non-admins,
+                // making the "Join Waitlist" path unreachable from the listing page.
+                // GREATEST(1, CEIL(capacity * 0.25)) mirrors Event::waitlistCapacity().
+                ->where(function ($q) {
+                    $q->whereRaw(
+                        // Branch 1: confirmed seats still available
+                        'capacity > (SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?)',
+                        ['confirmed']
+                    )->orWhereRaw(
+                        // Branch 2: event is full but waitlist is not yet full
+                        '(SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?) < GREATEST(1, CEIL(capacity * 0.25))',
+                        ['waitlisted']
+                    );
+                });
         }
 
         // withCount pre-loads confirmed_count for every event in one aggregated query.
