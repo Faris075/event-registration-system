@@ -13,10 +13,10 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        {{-- Apply saved theme before first paint; default is dark --}}
+        {{-- Apply saved theme before first paint; default is light --}}
         <script>
             (function(){
-                if(localStorage.getItem('theme')!=='light'){
+                if(localStorage.getItem('theme')==='dark'){
                     document.documentElement.classList.add('dark');
                 }
             })();
