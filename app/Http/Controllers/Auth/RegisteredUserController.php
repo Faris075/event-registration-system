@@ -40,9 +40,15 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name'              => ['required', 'string', 'max:255'],
             'email'             => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password'          => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone'             => ['nullable', 'string', 'regex:/^[0-9]{9,11}$/'],
+            'password'          => ['required', 'confirmed', Rules\Password::min(8)->mixedCase()->numbers()->symbols()],
             'security_question' => ['required', 'integer', 'between:1,6'],
             'security_answer'   => ['required', 'string', 'max:255'],
+        ], [
+            'phone.regex'      => 'Phone number must be 9–11 digits only (no spaces or symbols).',
+            'password.mixed'   => 'Password must contain at least one uppercase and one lowercase letter.',
+            'password.numbers' => 'Password must contain at least one number.',
+            'password.symbols' => 'Password must contain at least one symbol (e.g. @, #, !).',
         ]);
 
         $user = User::create([
@@ -50,9 +56,15 @@ class RegisteredUserController extends Controller
             'email'             => $request->email,
             'password'          => Hash::make($request->password),
             'security_question' => $request->security_question,
-            // Normalise the answer to lowercase before hashing so verification is case-insensitive.
             'security_answer'   => Hash::make(strtolower(trim($request->security_answer))),
         ]);
+
+        if ($request->filled('phone')) {
+            \App\Models\Attendee::updateOrCreate(
+                ['email' => $user->email],
+                ['name' => $user->name, 'phone' => $request->phone]
+            );
+        }
 
         event(new Registered($user));
 

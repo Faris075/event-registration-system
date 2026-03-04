@@ -17,9 +17,11 @@
             @include('profile.partials.update-currency-form')
         </div>
 
+        @unless(auth()->user()->is_admin)
         <div class="card">
             @include('profile.partials.delete-user-form')
         </div>
+        @endunless
 
     </div>
 </x-app-layout>

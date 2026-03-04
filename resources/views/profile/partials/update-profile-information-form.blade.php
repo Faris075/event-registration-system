@@ -1,10 +1,6 @@
 <section>
     <h2 style="font-size:1.05rem;font-weight:700;color:var(--primary);margin-bottom:0.25rem;">Profile Information</h2>
-    <p style="font-size:0.875rem;color:var(--muted);margin-bottom:1.25rem;">Update your account's profile information and email address.</p>
-
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
-        @csrf
-    </form>
+    <p style="font-size:0.875rem;color:var(--muted);margin-bottom:1.25rem;">Update your account's display name.</p>
 
     <form method="post" action="{{ route('profile.update') }}" class="form-grid">
         @csrf
@@ -18,18 +14,9 @@
 
         <div class="form-field">
             <label for="email" class="form-label">Email</label>
-            <input id="email" name="email" type="email" class="form-input" value="{{ old('email', $user->email) }}" required autocomplete="username" />
-            @error('email')<p class="form-error">{{ $message }}</p>@enderror
-
-            @if($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail())
-                <p style="font-size:0.85rem;margin-top:0.5rem;color:var(--muted);">
-                    Your email address is unverified.
-                    <button form="send-verification" style="background:none;border:none;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;">Re-send verification email.</button>
-                </p>
-                @if(session('status') === 'verification-link-sent')
-                    <p class="alert alert-success" style="margin-top:0.5rem;">A new verification link has been sent.</p>
-                @endif
-            @endif
+            <input id="email" type="email" class="form-input" value="{{ $user->email }}" disabled
+                   style="opacity:0.6;cursor:not-allowed;background:var(--surface,#f9fafb);" />
+            <p style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;">Email cannot be changed.</p>
         </div>
 
         <div style="display:flex;align-items:center;gap:1rem;">

@@ -50,17 +50,8 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        // fill() assigns validated data without saving to the DB yet.
-        $request->user()->fill($request->validated());
-
-        // If the email address changed, clear its verified timestamp.
-        // This forces re-verification and prevents unauthorized email hijacking.
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null; // Will trigger re-verification flow
-        }
-
-        // save() persists the model with a single UPDATE query.
-        $request->user()->save();
+        // Only the name is updated; email is locked and cannot be changed.
+        $request->user()->fill(['name' => $request->validated('name')])->save();
 
         // 'profile-updated' status is read by the Blade view to show a success banner.
         return Redirect::route('profile.edit')->with('status', 'profile-updated');

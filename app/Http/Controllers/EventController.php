@@ -44,61 +44,77 @@ class EventController extends Controller
      *  GROUP BY sub-query that attaches confirmed_count to every Event row —
      *  no extra query per card in the loop.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Determine role once to avoid repeated Auth::user() calls in the method.
-        $isAdmin = Auth::check() && Auth::user()->is_admin;
+        $isAdmin      = Auth::check() && Auth::user()->is_admin;
+        $search       = trim($request->input('search', ''));
+        $statusFilter = $request->input('status', '');
+        $dateFrom     = $request->input('date_from', '');
+        $dateTo       = $request->input('date_to', '');
 
-        $eventsQuery = Event::query(); // Start an unconstrained builder
+        $eventsQuery = Event::query();
 
         if (! $isAdmin) {
             $eventsQuery
-                ->where('status', 'published')   // Only publicly-visible events
-                ->where('date_time', '>', now())  // Exclude past events
-                // Show events that still have open CONFIRMED seats OR still have WAITLIST slots.
-                // Without this OR-branch, fully-booked events become invisible to non-admins,
-                // making the "Join Waitlist" path unreachable from the listing page.
-                // GREATEST(1, CEIL(capacity * 0.25)) mirrors Event::waitlistCapacity().
+                ->where('status', 'published')
+                ->where('date_time', '>', now())
                 ->where(function ($q) {
                     $q->whereRaw(
-                        // Branch 1: confirmed seats still available
                         'capacity > (SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?)',
                         ['confirmed']
                     )->orWhereRaw(
-                        // Branch 2: event is full but waitlist is not yet full
                         '(SELECT COUNT(*) FROM registrations WHERE event_id = events.id AND `status` = ?) < GREATEST(1, CEIL(capacity * 0.25))',
                         ['waitlisted']
                     );
                 });
         }
 
-        // withCount pre-loads confirmed_count for every event in one aggregated query.
-        // The alias 'confirmed_count' becomes $event->confirmed_count via the accessor in Event.php.
+        if ($search) {
+            $eventsQuery->where(fn ($q) => $q
+                ->where('title', 'like', "%{$search}%")
+                ->orWhere('location', 'like', "%{$search}%")
+            );
+        }
+        if ($isAdmin && $statusFilter) {
+            $eventsQuery->where('status', $statusFilter);
+        }
+        if ($dateFrom) {
+            $eventsQuery->whereDate('date_time', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $eventsQuery->whereDate('date_time', '<=', $dateTo);
+        }
+
         $events = $eventsQuery
             ->withCount(['registrations as confirmed_count' => fn ($q) => $q->where('status', 'confirmed')])
-            ->latest('date_time') // Most recent/upcoming first
-            ->paginate(10);       // 10 per page; $events->links() renders pagination in Blade
+            ->latest('date_time')
+            ->paginate(10)
+            ->withQueryString();
 
-        // Build a collection of event IDs the current user is already registered/waitlisted for.
-        // Used in the view to disable "Register" buttons on already-booked events.
-        $bookedEventIds = collect(); // Default to empty collection for guests and admins
+        $bookedEventIds     = collect();
+        $waitlistedEventIds = collect();
 
         if (Auth::check() && ! Auth::user()->is_admin) {
-            $userEmail = Auth::user()->email; // Match user↔attendee by shared email field
-
-            // Find the attendee record linked to this user (may not exist for brand-new accounts).
-            $attendee = \App\Models\Attendee::where('email', $userEmail)->first();
-
+            $attendee = \App\Models\Attendee::where('email', Auth::user()->email)->first();
             if ($attendee) {
-                // pluck returns a flat Collection of event_id integers.
-                $bookedEventIds = Registration::query()
+                $regs = Registration::query()
                     ->where('attendee_id', $attendee->id)
-                    ->whereIn('status', ['confirmed', 'waitlisted']) // Cancelled = can re-register
-                    ->pluck('event_id');
+                    ->whereIn('status', ['confirmed', 'waitlisted'])
+                    ->get(['event_id', 'status']);
+                $bookedEventIds     = $regs->where('status', 'confirmed')->pluck('event_id');
+                $waitlistedEventIds = $regs->where('status', 'waitlisted')->pluck('event_id');
             }
         }
 
-        return view('events.index', compact('events', 'bookedEventIds', 'isAdmin'));
+        if ($request->ajax()) {
+            return response()->json([
+                'html'     => view('events.partials.cards', compact('events', 'bookedEventIds', 'waitlistedEventIds', 'isAdmin'))->render(),
+                'hasMore'  => $events->hasMorePages(),
+                'nextPage' => $events->currentPage() + 1,
+            ]);
+        }
+
+        return view('events.index', compact('events', 'bookedEventIds', 'waitlistedEventIds', 'isAdmin', 'search', 'statusFilter', 'dateFrom', 'dateTo'));
     }
 
     /**
