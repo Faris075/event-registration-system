@@ -93,10 +93,14 @@
                                                 'cancelled'  => 'badge-cancelled',
                                                 default      => 'badge-pending',
                                             };
+                                            $eventEnded = $reg->event && \Carbon\Carbon::parse($reg->event->date_time)->isPast();
                                         @endphp
                                         <span class="badge {{ $badgeClass }}">{{ ucfirst($reg->status) }}</span>
                                         @if($reg->status === 'waitlisted' && $reg->waitlist_position)
                                             <span style="font-size:0.75rem;color:var(--muted);"> #{{ $reg->waitlist_position }}</span>
+                                        @endif
+                                        @if($eventEnded)
+                                            <br><span style="font-size:0.75rem;font-weight:600;color:#6b7280;background:#f3f4f6;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.15rem 0.45rem;display:inline-block;margin-top:0.3rem;">Event Ended</span>
                                         @endif
                                     </td>
                                     <td>
