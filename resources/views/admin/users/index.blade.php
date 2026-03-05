@@ -28,7 +28,6 @@
     </form>
 
     {{-- Admins table --}}
-    @php $superAdminId = $admins->first()?->id; @endphp
     <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.6rem;color:var(--primary);">Admins</h2>
     <div class="data-table-wrap" style="margin-bottom:2rem;">
         <table class="data-table">

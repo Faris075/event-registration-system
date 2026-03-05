@@ -36,7 +36,9 @@ class AdminUserController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.users.index', compact('admins', 'users', 'search'));
+        $superAdminId = $this->superAdminId();
+
+        return view('admin.users.index', compact('admins', 'users', 'search', 'superAdminId'));
     }
 
     public function promote(User $user): RedirectResponse

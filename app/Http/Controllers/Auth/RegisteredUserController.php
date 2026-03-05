@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Auth;
 
@@ -12,29 +12,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
-/**
- * Handles new-user registration.
- *
- * Validates the incoming registration request (including a mandatory security
- * question and answer), creates the User record, fires the Registered event,
- * and logs the user in.  The security answer is normalised to lowercase before
- * hashing so comparison is case-insensitive.
- */
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
