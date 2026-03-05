@@ -40,10 +40,14 @@
 
             <div class="form-field">
                 <label class="form-label">Email Address <span style="color:var(--danger);">*</span></label>
-                <input type="email" name="email" id="reg-email" value="{{ old('email', auth()->user()?->email) }}" class="form-input" placeholder="name@mail.com" required maxlength="255" {{ auth()->check() ? 'readonly style=background:var(--bg);cursor:not-allowed;' : '' }} autocomplete="email">
+                <input type="email" name="email" id="reg-email" value="{{ old('email', auth()->user()?->email) }}" class="form-input" placeholder="name@mail.com" required maxlength="255" autocomplete="email">
                 <span class="form-error" id="email-error" style="display:none;"></span>
                 @error('email') <p class="form-error">{{ $message }}</p> @enderror
             </div>
+
+            <p style="font-size:0.8rem;color:var(--muted);margin-top:-0.5rem;margin-bottom:0.25rem;">
+                Registering for someone else? You can update the name and email above.
+            </p>
 
             <div class="form-row">
                 <div class="form-field">
