@@ -1,25 +1,4 @@
-﻿<?php
-// ============================================================
-// Controller: EventController
-// ------------------------------------------------------------
-// Handles CRUD for the events table plus the public event listing.
-//
-// Route summary:
-//   GET    /events              → index()   (public)
-//   GET    /events/create       → create()  (admin)
-//   POST   /events              → store()   (admin)
-//   GET    /events/{event}      → show()    (public)
-//   GET    /events/{event}/edit → edit()    (admin)
-//   PUT    /events/{event}      → update()  (admin)
-//   DELETE /events/{event}      → destroy() (admin)
-//
-// Best practices applied:
-//  ✔ withCount() prevents N+1 queries on the event listing
-//  ✔ loadCount() on show() avoids extra query in the accessor
-//  ✔ Route-model binding ({event}) auto-resolves Event by ID
-//  ✔ Mail errors are caught + reported without breaking the request
-//  ✔ 'after:now' validation blocks creating events in the past
-// ============================================================
+<?php
 
 namespace App\Http\Controllers;
 
@@ -46,6 +25,9 @@ class EventController extends Controller
      */
     public function index(Request $request)
     {
+        // Keep DB in sync: mark any published event whose date has passed as completed.
+        Event::where('status', 'published')->where('date_time', '<', now())->update(['status' => 'completed']);
+
         $isAdmin      = Auth::check() && Auth::user()->is_admin;
         $search       = trim($request->input('search', ''));
         $statusFilter = $request->input('status', '');

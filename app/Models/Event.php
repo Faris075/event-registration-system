@@ -169,6 +169,21 @@ class Event extends Model
     }
 
     /**
+     * Override status to return 'completed' for any published event whose date has passed.
+     * This keeps the display correct without waiting for the scheduled command.
+     */
+    public function getStatusAttribute(): string
+    {
+        $raw = $this->attributes['status'] ?? 'draft';
+
+        if ($raw === 'published' && now()->greaterThanOrEqualTo($this->date_time)) {
+            return 'completed';
+        }
+
+        return $raw;
+    }
+
+    /**
      * Whether the event's scheduled date/time has already passed.
      * Used to block new registrations on past events (registration form guard)
      * and to auto-label events as completed in the UI.
